@@ -1,0 +1,13 @@
+age,gender,blood_pressure,sugar,bmi,cholesterol,prediction
+45,"male",150,160,28.5,240,"High Risk"
+34,female,110,90,22.1,180,"Low Risk"
+60,male,170,200,30.0,260,"High Risk"
+29,female,120,100,24.3,190,"Low Risk"
+52,male,160,180,27.8,250,"High Risk"
+40,female,130,95,23.8,195,"Low Risk"
+55,male,145,150,29.5,230,"High Risk"
+38,female,118,85,21.9,175,"Low Risk"
+63,male,175,210,31.2,270,"High Risk"
+31,female,112,88,22.4,185,"Low Risk"
+47,male,155,165,28.0,245"High Risk"
+26,female,108,80,20.1,170,"Low Risk"
