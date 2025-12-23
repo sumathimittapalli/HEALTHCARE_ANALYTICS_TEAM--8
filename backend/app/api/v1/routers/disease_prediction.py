@@ -1,22 +1,21 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.schemas.disease_schema import DiseaseInput, DiseaseOutput, DiseaseRecordOut
-from app.database.connection import SessionLocal
-from app.database import crud
-from app.utils.preprocess import preprocess_input
 import os
 import joblib
+
+from app.schemas.disease_prediction_schema import DiseasePredictionInput, DiseasePredictionOutput, DiseasePredictionRecordOut
+from app.database.database import SessionLocal
+from app.database import disease_prediction_operations
+from app.utils.disease_preprocessing import preprocess_disease_input
 
 router = APIRouter(
     prefix="/disease",
     tags=["Disease Prediction"]
 )
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.join(
-    BASE_DIR, "..", "..", "..", "ml_models", "disease_model.pkl"
-)
-
+# ----------------------------
+# DB Dependency
+# ----------------------------
 def get_db():
     db = SessionLocal()
     try:
@@ -24,27 +23,38 @@ def get_db():
     finally:
         db.close()
 
-_model = None
+# ----------------------------
+# Load ML Model
+# ----------------------------
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(
+    BASE_DIR, "..", "..", "..", "ml_models", "disease_prediction_model.pkl"
+)
+
 try:
-    _model = joblib.load(MODEL_PATH)
+    model = joblib.load(MODEL_PATH)
 except Exception:
-    _model = None
+    model = None
 
-@router.post("/predict", response_model=DiseaseOutput)
-def predict_disease(payload: DiseaseInput, db: Session = Depends(get_db)):
-    features = preprocess_input(payload)
+# ----------------------------
+# Routes
+# ----------------------------
+@router.post("/predict", response_model=DiseasePredictionOutput)
+def predict_disease(payload: DiseasePredictionInput, db: Session = Depends(get_db)):
 
-    if _model is not None:
+    features = preprocess_disease_input(payload)
+
+    if model:
         try:
-            pred = _model.predict([features])[0]
+            pred = model.predict([features])[0]
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Model inference error: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
     else:
         pred = 1 if (payload.sugar > 140 or payload.blood_pressure > 160) else 0
 
     prediction_label = "High Risk" if int(pred) == 1 else "Low Risk"
 
-    crud.save_prediction(db, {
+    disease_prediction_operations.save_disease_prediction(db, {
         "age": payload.age,
         "gender": payload.gender,
         "blood_pressure": payload.blood_pressure,
@@ -54,7 +64,7 @@ def predict_disease(payload: DiseaseInput, db: Session = Depends(get_db)):
         "prediction": prediction_label
     })
 
-    return DiseaseOutput(
+    return DiseasePredictionOutput(
         prediction=prediction_label,
         status="success"
     )
@@ -66,9 +76,7 @@ def disease_info():
         "features": ["age", "gender", "blood_pressure", "sugar", "bmi", "cholesterol"]
     }
 
-@router.get("/records", response_model=list[DiseaseRecordOut])
+@router.get("/records", response_model=list[DiseasePredictionRecordOut])
 def get_all_disease_records(db: Session = Depends(get_db)):
-    """
-    Returns all disease prediction records saved via POST
-    """
-    return crud.get_all_predictions(db)
+    return disease_prediction_operations.get_all_disease_predictions(db)
+
