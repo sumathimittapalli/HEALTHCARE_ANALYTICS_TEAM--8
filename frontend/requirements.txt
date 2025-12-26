@@ -3,3 +3,4 @@ requests
 matplotlib
 scikit-learn
 joblib
+python-multipart

@@ -4,16 +4,16 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 # ---------------------------------
-# Load environment variables (.env)
+# Load environment variables
 # ---------------------------------
 load_dotenv()
 
 # ---------------------------------
-# Database URL
+# Database URL (from .env or fallback)
 # ---------------------------------
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://postgres:9121665288@localhost:5432/image_db"
+    "postgresql://postgres:Vijayram7@localhost:5432/Healthcare"
 )
 
 # ---------------------------------
@@ -39,7 +39,7 @@ SessionLocal = sessionmaker(
 Base = declarative_base()
 
 # ---------------------------------
-# FastAPI Dependency
+# FastAPI DB Dependency
 # ---------------------------------
 def get_db():
     db = SessionLocal()
